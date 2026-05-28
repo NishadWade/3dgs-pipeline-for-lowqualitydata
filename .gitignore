@@ -1,0 +1,49 @@
+# Large data outputs
+da3_output_*/
+tof_*/
+*_frames/
+*_best/
+3dgs_output/
+colmap/
+colmap_*/
+SplaTAM/
+da3_output/
+
+# Python environments
+depth_anything3_env/
+*_env/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Large media files
+*.ply
+*.npz
+*.npy
+*.avi
+*.mp4
+*.mov
+*.glb
+
+# Model weights
+*.pth
+*.pt
+*.bin
+*.safetensors
+depth-anything/
+
+# Logs and temp
+*.log
+*.tmp
+diag_*.jpg
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docs generated from code
+*.docx
