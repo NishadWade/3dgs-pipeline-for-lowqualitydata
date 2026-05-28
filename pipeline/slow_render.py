@@ -1,32 +1,35 @@
 """
-Re-encode an existing gs_video at a slower FPS so the camera moves slower.
-No re-rendering needed — just changes playback speed.
+Re-encode a DA3 gs_video at a lower FPS so the camera flythrough plays slower.
+No re-rendering needed — just re-encodes the existing frames at a different speed.
 
-Current: 154 frames @ 24fps = ~6.4s
-Target:  154 frames @ 8fps  = ~19s  (3x slower)
+Usage:
+    python slow_render.py --input 0000_smooth_light.mp4 --output slow.mp4
+    python slow_render.py --input 0000_smooth_light.mp4 --output slow.mp4 --fps 10
 """
 import moviepy.editor as mpy
-import sys
+import argparse
 
-INPUT  = r"D:\3DGS_Project\da3_output_iphone_v10\gs_video\Garage_Final3DGS.mp4"
-OUTPUT = r"D:\3DGS_Project\da3_output_iphone_v10\gs_video\Garage_Final3DGS_slow.mp4"
-TARGET_FPS = 8   # change this to taste (lower = slower)
+parser = argparse.ArgumentParser(description="Re-encode video at slower FPS")
+parser.add_argument("--input",  required=True, help="Input MP4 file")
+parser.add_argument("--output", required=True, help="Output MP4 file")
+parser.add_argument("--fps", type=float, default=8,
+                    help="Target FPS (default: 8, which is 3x slower than DA3's default 24fps)")
+args = parser.parse_args()
 
-clip = mpy.VideoFileClip(INPUT)
+clip = mpy.VideoFileClip(args.input)
 print(f"Original: {clip.fps:.1f}fps  {clip.duration:.1f}s  ({int(clip.fps * clip.duration)} frames)")
 
-# Re-encode at lower FPS — same frames, just played back slower
 frames = list(clip.iter_frames())
 print(f"Frames extracted: {len(frames)}")
 
-slow_clip = mpy.ImageSequenceClip(frames, fps=TARGET_FPS)
-print(f"Output:   {TARGET_FPS}fps  {len(frames)/TARGET_FPS:.1f}s")
+slow_clip = mpy.ImageSequenceClip(frames, fps=args.fps)
+print(f"Output:   {args.fps}fps  {len(frames)/args.fps:.1f}s")
 
 slow_clip.write_videofile(
-    OUTPUT,
+    args.output,
     codec="libx264",
     audio=False,
-    fps=TARGET_FPS,
+    fps=args.fps,
     ffmpeg_params=["-crf", "18", "-preset", "slow", "-pix_fmt", "yuv420p"],
 )
-print(f"\nSaved: {OUTPUT}")
+print(f"\nSaved: {args.output}")
