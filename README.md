@@ -112,6 +112,59 @@ python tof/tof_to_3d_mesh.py --recording-dir /path/to/tof_recording/
 
 ---
 
+## Why Not COLMAP?
+
+COLMAP is the standard Structure-from-Motion tool used to estimate camera poses before
+running 3DGS. We tried it on the exact same parking garage footage and it failed. Here
+is what happened and why, so you don't waste time repeating it.
+
+### What we tried
+
+**Attempt 1 — All 4 video clips as one sequence (511 frames, GPU SIFT matching)**
+```bash
+colmap feature_extractor --image_path frames/ --database_path db.db \
+  --FeatureExtraction.use_gpu 1
+colmap exhaustive_matcher --database_path db.db --FeatureMatching.use_gpu 1
+colmap mapper --image_path frames/ --database_path db.db --output_path sparse/
+```
+Result: **4 completely disconnected models**. COLMAP could not link the clips together.
+Best single model: 120 images out of 511. A partial merge of two models gave 90 images.
+
+**Attempt 2 — Single clip only (v1, 248 frames, exhaustive matching)**
+
+Same result. Exhaustive matching (every frame against every other) still produced
+4 disconnected component models. The clips could not be registered into one map.
+
+> **Note on COLMAP 4:** Option names changed in version 4.
+> `SiftExtraction.use_gpu` → `FeatureExtraction.use_gpu`
+> `SiftMatching.use_gpu`   → `FeatureMatching.use_gpu`
+
+### Why it fails on parking garage footage
+
+COLMAP relies on repeatable keypoint matches between frames (SIFT features). Parking
+garages violate nearly every assumption COLMAP makes:
+
+| Problem | Why it breaks COLMAP |
+|---------|----------------------|
+| **Repetitive structure** | Identical concrete columns, ceiling tiles, and parking lines confuse SIFT — the same feature appears in dozens of places, creating false matches |
+| **Textureless surfaces** | Bare concrete walls have almost no keypoints; few matches → weak relative pose estimates |
+| **Multiple disconnected clips** | 4 separate video recordings with no shared visual overlap; COLMAP has no way to tie them into one coordinate system |
+| **Low-light / motion blur** | Parking garages are dim; moving camera produces blurred frames with fewer detectable keypoints |
+| **Uniform lighting** | No shadows or directional gradients to help SIFT distinguish similar regions |
+
+### Why DA3 works instead
+
+DA3 uses a learned transformer (not feature matching) to estimate depth and camera
+poses jointly from image content. It does not require repeated textures or keypoint
+correspondences — it reasons about scene geometry from a single forward pass.
+This makes it robust to exactly the conditions that break COLMAP.
+
+**Bottom line:** If your scene is a parking garage, underground structure, plain
+office, or any other low-texture / repetitive environment, skip COLMAP entirely
+and go straight to DA3.
+
+---
+
 ## Requirements
 
 ```
